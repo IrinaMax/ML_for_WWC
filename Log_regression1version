@@ -33,6 +33,7 @@
 +       }
 +       return(out)
 +     }
+
 > fixed.age <- impute_age(df.train$Age, df.train$Pclass)
 > fixed.age
   [1] 22.00 38.00 26.00 35.00 35.00 24.00 54.00  2.00 27.00 14.00  4.00 58.00 20.00 39.00
@@ -100,6 +101,9 @@
 [869] 24.00  4.00 26.00 47.00 33.00 47.00 28.00 15.00 20.00 19.00 24.00 56.00 25.00 33.00
 [883] 22.00 28.00 25.00 39.00 27.00 19.00 24.00 26.00 32.00
 > df.train$Age <- fixed.age
+# imputation check : must be missing value now
+ missmap(df.train, main = 'Imputation Check', col = c('yellow', 'black'), legend = F)
+
 > df.train <- select(df.train, -PassengerId, -Ticket, -Cabin, - Name)
 > df.train %>% head
   Survived Pclass    Sex Age SibSp Parch    Fare Embarked
@@ -177,3 +181,28 @@ Residual deviance:  763.41  on 870  degrees of freedom
 AIC: 805.41
 
 Number of Fisher Scoring iterations: 15
+
+library(caTools)
+set.seed(101)
+split <- sample.split(df.train$Survived, SplitRatio = .7)
+final.train <- subset(df.train, split ==TRUE)
+final.test <- subset(df.train, split ==FALSE)
+final.log <- glm(Survived ~., family = binomial(link='logit'), final.train)
+summary(final.log)
+
+fitted.probabilities <- predict(final.log, final.test, type ='response')
+fitted.result <- ifelse(fitted.probabilities>0.5,1 , 0)
+  fitted.result
+missClassError <- mean(fitter.result != final.test$Survived)  
+missClassError
+accurasy <- (1 - missClassError)
+accurasy
+
+# confusion metrix
+table(final.test$Survived, fitted.probabilities> 0.5)
+-------------------------------------------------------
+
+
+# we were able to achieve around 80% accuracy, where as random guessing would have just been 50% accuracy. 
+
+
